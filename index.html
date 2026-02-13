@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCV Dauntless - Mission Prioritisation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Antonio:wght@400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Instructor Control Panel (Hidden by default) -->
+    <div id="instructorPanel" class="instructor-panel hidden">
+        <button id="toggleInstructor" class="toggle-instructor">⚙️</button>
+        <div class="instructor-content">
+            <h3>Instructor Controls</h3>
+            <div class="weight-controls">
+                <div class="weight-item">
+                    <label for="survivalWeight">Survival:</label>
+                    <input type="number" id="survivalWeight" value="20" min="0" max="40" step="1">
+                </div>
+                <div class="weight-item">
+                    <label for="operationsWeight">Operations:</label>
+                    <input type="number" id="operationsWeight" value="10" min="0" max="40" step="1">
+                </div>
+                <div class="weight-item">
+                    <label for="uncertaintyWeight">Uncertainty:</label>
+                    <input type="number" id="uncertaintyWeight" value="15" min="0" max="40" step="1">
+                </div>
+                <div class="weight-item">
+                    <label for="strategicWeight">Strategic:</label>
+                    <input type="number" id="strategicWeight" value="8" min="0" max="40" step="1">
+                </div>
+                <div class="weight-item">
+                    <label for="crewWeight">Crew:</label>
+                    <input type="number" id="crewWeight" value="10" min="0" max="40" step="1">
+                </div>
+                <div class="weight-item">
+                    <label for="stakeholderWeight">Stakeholder:</label>
+                    <input type="number" id="stakeholderWeight" value="5" min="0" max="40" step="1">
+                </div>
+                <div class="weight-item">
+                    <label for="latentWeight">Latent:</label>
+                    <input type="number" id="latentWeight" value="12" min="0" max="40" step="1">
+                </div>
+            </div>
+            <div class="variability-control">
+                <label class="variability-label">
+                    <input type="checkbox" id="variabilityToggle">
+                    <span class="variability-check"></span>
+                    Score Variability
+                </label>
+                <div class="variability-options" id="variabilityOptions">
+                    <label class="variability-option">
+                        <input type="radio" name="variabilityRange" value="1" checked> ±1
+                    </label>
+                    <label class="variability-option">
+                        <input type="radio" name="variabilityRange" value="2"> ±2
+                    </label>
+                </div>
+            </div>
+            <button id="resetMission" class="btn-secondary">Reset Mission</button>
+            <button id="exportJson" class="btn-secondary">Export JSON</button>
+        </div>
+    </div>
+
+    <!-- Main Selection Screen -->
+    <div id="selectionScreen" class="screen active">
+        <div class="container">
+            <header class="mission-header">
+                <h1>🚀 SCV DAUNTLESS</h1>
+                <p class="mission-title">MISSION PRIORITISATION</p>
+            </header>
+
+            <!-- Resource Display -->
+            <div class="resources-display">
+                <div class="resource-bar">
+                    <div class="resource-label">RESOURCE UNITS</div>
+                    <div class="resource-meter">
+                        <div id="ruBar" class="meter-fill" style="width: 0%"></div>
+                        <div class="meter-text">
+                            <span id="ruUsed">0</span> / <span id="ruMax">100</span> RU
+                        </div>
+                    </div>
+                </div>
+                <div class="resource-bar">
+                    <div class="resource-label">WORK SLOTS</div>
+                    <div class="resource-meter">
+                        <div id="slotsBar" class="meter-fill" style="width: 0%"></div>
+                        <div class="meter-text">
+                            <span id="slotsUsed">0</span> / <span id="slotsMax">10</span> SLOTS
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Story Grid -->
+            <div class="story-grid" id="storyGrid"></div>
+
+            <!-- Action Bar -->
+            <div class="action-bar">
+                <button id="clearAll" class="btn-clear">CLEAR ALL</button>
+                <button id="launchMission" class="btn-launch">LAUNCH MISSION</button>
+                <button id="showDetails" class="btn-secondary">SHOW DETAILS</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Launch Sequence Screen -->
+    <div id="launchScreen" class="screen">
+        <div class="launch-sequence">
+            <div id="countdownText" class="launch-status">INITIATING LAUNCH SEQUENCE...</div>
+            <div id="countdown" class="countdown-display"></div>
+        </div>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="resultsScreen" class="screen">
+        <div class="results-split">
+            <!-- LEFT: Outcome Ladder -->
+            <div class="outcome-panel">
+                <div class="outcome-ladder" id="outcomeLadder"></div>
+                <div class="results-action-bar">
+                    <button id="backToSelection" class="btn-secondary">BACK TO SELECTION</button>
+                </div>
+            </div>
+
+            <!-- RIGHT: System RAG List -->
+            <div class="systems-panel">
+                <div class="systems-header">SYSTEM STATUS</div>
+                <div id="systemGrid" class="system-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Story Details Modal -->
+    <div id="detailsModal" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModal">✕</button>
+            <div id="modalBody" class="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="storyData.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
