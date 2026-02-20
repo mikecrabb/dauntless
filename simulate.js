@@ -1,38 +1,38 @@
-// Monte Carlo simulation of 100 random student selections
+// Monte Carlo simulation of 1000 random student selections
 // Run with: node simulate.js
 
-// Inline story data
+// Inline story data - Updated to match current storyData.js
 const storyData = [
-    { id:"S1",  ru:20, slots:2, tags:["survival","structural","irreversible"] },
-    { id:"S2",  ru:15, slots:1, tags:["survival","life-support"] },
-    { id:"S3",  ru:18, slots:2, tags:["survival","radiation"] },
-    { id:"S4",  ru:10, slots:1, tags:["stakeholder","compliance"] },
-    { id:"S5",  ru:14, slots:1, tags:["survival","propulsion"] },
-    { id:"S6",  ru:12, slots:1, tags:["survival","power","irreversible"] },
-    { id:"S7",  ru:12, slots:1, tags:["operations"] },
-    { id:"S8",  ru:14, slots:2, tags:["uncertainty","power"] },
-    { id:"S9",  ru:8,  slots:1, tags:["operations"] },
-    { id:"S10", ru:9,  slots:1, tags:["operations"] },
-    { id:"S11", ru:13, slots:1, tags:["operations"] },
-    { id:"S12", ru:11, slots:1, tags:["operations"] },
-    { id:"S13", ru:13, slots:2, tags:["uncertainty","radiation"] },
-    { id:"S14", ru:16, slots:2, tags:["uncertainty"] },
-    { id:"S15", ru:15, slots:2, tags:["uncertainty","predictive"] },
-    { id:"S16", ru:17, slots:2, tags:["uncertainty","structural"] },
-    { id:"S17", ru:22, slots:3, tags:["strategic"] },
-    { id:"S18", ru:16, slots:2, tags:["strategic"] },
-    { id:"S19", ru:11, slots:1, tags:["strategic"] },
-    { id:"S20", ru:14, slots:1, tags:["strategic"] },
-    { id:"S21", ru:10, slots:1, tags:["crew"] },
-    { id:"S22", ru:9,  slots:1, tags:["crew"] },
-    { id:"S23", ru:6,  slots:1, tags:["crew"] },
+    { id:"S1",  ru:11, slots:1, tags:["latent","irreversible"] },
+    { id:"S2",  ru:11, slots:1, tags:["operations"] },
+    { id:"S3",  ru:14, slots:1, tags:["strategic"] },
+    { id:"S4",  ru:17, slots:2, tags:["uncertainty","structural"] },
+    { id:"S5",  ru:7,  slots:1, tags:["stakeholder"] },
+    { id:"S6",  ru:10, slots:1, tags:["crew"] },
+    { id:"S7",  ru:14, slots:1, tags:["survival","propulsion"] },
+    { id:"S8",  ru:8,  slots:1, tags:["stakeholder"] },
+    { id:"S9",  ru:13, slots:1, tags:["operations"] },
+    { id:"S10", ru:6,  slots:1, tags:["stakeholder"] },
+    { id:"S11", ru:10, slots:1, tags:["stakeholder","compliance"] },
+    { id:"S12", ru:6,  slots:1, tags:["crew"] },
+    { id:"S13", ru:15, slots:1, tags:["survival","life-support"] },
+    { id:"S14", ru:20, slots:2, tags:["survival","structural","irreversible"] },
+    { id:"S15", ru:12, slots:1, tags:["survival","power","irreversible"] },
+    { id:"S16", ru:10, slots:1, tags:["latent"] },
+    { id:"S17", ru:16, slots:2, tags:["strategic"] },
+    { id:"S18", ru:8,  slots:1, tags:["operations"] },
+    { id:"S19", ru:15, slots:2, tags:["uncertainty","predictive"] },
+    { id:"S20", ru:16, slots:2, tags:["uncertainty"] },
+    { id:"S21", ru:12, slots:1, tags:["stakeholder","compliance"] },
+    { id:"S22", ru:18, slots:2, tags:["survival","radiation"] },
+    { id:"S23", ru:9,  slots:1, tags:["crew"] },
     { id:"S24", ru:5,  slots:1, tags:["crew"] },
-    { id:"S25", ru:7,  slots:1, tags:["stakeholder"] },
-    { id:"S26", ru:6,  slots:1, tags:["stakeholder"] },
-    { id:"S27", ru:8,  slots:1, tags:["stakeholder"] },
-    { id:"S28", ru:12, slots:1, tags:["stakeholder","compliance"] },
-    { id:"S29", ru:10, slots:1, tags:["latent"] },
-    { id:"S30", ru:11, slots:1, tags:["latent","irreversible"] },
+    { id:"S25", ru:13, slots:2, tags:["uncertainty","radiation"] },
+    { id:"S26", ru:14, slots:2, tags:["uncertainty","power"] },
+    { id:"S27", ru:22, slots:3, tags:["strategic"] },
+    { id:"S28", ru:9,  slots:1, tags:["operations"] },
+    { id:"S29", ru:11, slots:1, tags:["strategic"] },
+    { id:"S30", ru:12, slots:1, tags:["operations"] },
 ];
 
 const weights = {
@@ -47,7 +47,7 @@ const weights = {
 
 const MAX_RU = 100;
 const MAX_SLOTS = 10;
-const NUM_SIMULATIONS = 100;
+const NUM_SIMULATIONS = 1000;
 
 function shuffle(arr) {
     const a = [...arr];
@@ -94,8 +94,28 @@ function calculateScore(selected) {
         });
     });
 
-    const totalScore = Object.values(breakdown).reduce((sum, val) => sum + val, 0);
-    return { totalScore, breakdown };
+    const baseScore = Object.values(breakdown).reduce((sum, val) => sum + val, 0);
+
+    // Calculate system RAG statuses
+    const rag = getRAG(breakdown);
+    const greenCount = Object.values(rag).filter(v => v === 'GREEN').length;
+    const redCount = Object.values(rag).filter(v => v === 'RED').length;
+
+    // System synergy bonuses
+    let synergyBonus = 0;
+    if (greenCount >= 6) synergyBonus = 30;
+    else if (greenCount >= 4) synergyBonus = 15;
+    else if (greenCount >= 2) synergyBonus = 5;
+
+    // Critical system penalties
+    let criticalPenalty = 0;
+    if (redCount >= 6) criticalPenalty = -50;
+    else if (redCount >= 4) criticalPenalty = -25;
+    else if (redCount >= 2) criticalPenalty = -10;
+
+    const totalScore = baseScore + synergyBonus + criticalPenalty;
+
+    return { totalScore, baseScore, synergyBonus, criticalPenalty, greenCount, redCount, breakdown };
 }
 
 function getOutcome(score) {
@@ -126,11 +146,14 @@ function getRAG(breakdown) {
 
 // ─── RUN SIMULATION ───
 console.log('═══════════════════════════════════════════════════════════════');
-console.log('  SCV DAUNTLESS — MONTE CARLO SIMULATION (100 random students)');
+console.log('  SCV DAUNTLESS — MONTE CARLO SIMULATION (1000 random students)');
 console.log('═══════════════════════════════════════════════════════════════\n');
 
 const outcomes = { 'MISSION SUCCESS': 0, 'LAUNCH APPROVED': 0, 'MARGINAL CLEARANCE': 0, 'CATASTROPHIC FAILURE': 0 };
 const scores = [];
+const baseScores = [];
+const bonuses = [];
+const penalties = [];
 const ragTotals = {};
 ['survival','operations','uncertainty','strategic','crew','stakeholder','latent'].forEach(k => {
     ragTotals[k] = { GREEN: 0, AMBER: 0, RED: 0 };
@@ -140,12 +163,15 @@ const allResults = [];
 
 for (let i = 0; i < NUM_SIMULATIONS; i++) {
     const { selected, ruUsed, slotsUsed } = simulateStudent();
-    const { totalScore, breakdown } = calculateScore(selected);
+    const { totalScore, baseScore, synergyBonus, criticalPenalty, greenCount, redCount, breakdown } = calculateScore(selected);
     const outcome = getOutcome(totalScore);
     const rag = getRAG(breakdown);
 
     outcomes[outcome]++;
     scores.push(totalScore);
+    baseScores.push(baseScore);
+    if (synergyBonus > 0) bonuses.push(synergyBonus);
+    if (criticalPenalty < 0) penalties.push(criticalPenalty);
 
     for (const [k, v] of Object.entries(rag)) {
         ragTotals[k][v]++;
@@ -157,7 +183,12 @@ for (let i = 0; i < NUM_SIMULATIONS; i++) {
         count: selected.length,
         ruUsed,
         slotsUsed,
+        baseScore,
+        synergyBonus,
+        criticalPenalty,
         totalScore,
+        greenCount,
+        redCount,
         outcome,
         breakdown
     });
@@ -195,6 +226,21 @@ console.log(`  P90:      ${p90}`);
 console.log(`  Max:      ${max}`);
 
 console.log('\n  Thresholds: 110+ Success | 85-109 Approved | 60-84 Marginal | <60 Failure');
+
+console.log('\nBONUS/PENALTY STATISTICS');
+console.log('────────────────────────────────────────────');
+const avgBase = baseScores.reduce((a, b) => a + b, 0) / baseScores.length;
+const avgBonus = bonuses.length > 0 ? bonuses.reduce((a, b) => a + b, 0) / bonuses.length : 0;
+const avgPenalty = penalties.length > 0 ? penalties.reduce((a, b) => a + b, 0) / penalties.length : 0;
+const bonusPct = (bonuses.length / NUM_SIMULATIONS * 100).toFixed(1);
+const penaltyPct = (penalties.length / NUM_SIMULATIONS * 100).toFixed(1);
+
+console.log(`  Average Base Score:         ${avgBase.toFixed(1)}`);
+console.log(`  Average Final Score:        ${avg.toFixed(1)}`);
+console.log(`  Runs with Synergy Bonus:    ${bonuses.length} (${bonusPct}%)`);
+console.log(`  Average Bonus (when >0):    +${avgBonus.toFixed(1)}`);
+console.log(`  Runs with Critical Penalty: ${penalties.length} (${penaltyPct}%)`);
+console.log(`  Average Penalty (when <0):  ${avgPenalty.toFixed(1)}`);
 
 console.log('\nSYSTEM RAG DISTRIBUTION (across all 100 runs)');
 console.log('────────────────────────────────────────────');

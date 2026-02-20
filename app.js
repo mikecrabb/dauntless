@@ -228,12 +228,45 @@ class PrioritisationEngine {
             });
         });
 
-        const totalScore = Object.values(breakdown).reduce((sum, val) => sum + val, 0);
+        const baseScore = Object.values(breakdown).reduce((sum, val) => sum + val, 0);
+
+        // Calculate system RAG statuses and apply bonuses/penalties
+        const systems = this.getSystemRAG(breakdown);
+        const greenCount = systems.filter(s => s.rag === 'green').length;
+        const redCount = systems.filter(s => s.rag === 'red').length;
+
+        let synergyBonus = 0;
+        let criticalPenalty = 0;
+
+        // System synergy bonuses (multiple green systems)
+        if (greenCount >= 6) {
+            synergyBonus = 30;
+        } else if (greenCount >= 4) {
+            synergyBonus = 15;
+        } else if (greenCount >= 2) {
+            synergyBonus = 5;
+        }
+
+        // Critical system penalties (multiple red systems)
+        if (redCount >= 6) {
+            criticalPenalty = -50;
+        } else if (redCount >= 4) {
+            criticalPenalty = -25;
+        } else if (redCount >= 2) {
+            criticalPenalty = -10;
+        }
+
+        const totalScore = baseScore + synergyBonus + criticalPenalty;
         const outcomeBand = this.determineOutcomeBand(totalScore);
-        const consequences = this.generateConsequences(breakdown, outcomeBand);
+        const consequences = this.generateConsequences(breakdown, outcomeBand, greenCount, redCount, synergyBonus, criticalPenalty);
 
         return {
             totalScore,
+            baseScore,
+            synergyBonus,
+            criticalPenalty,
+            greenCount,
+            redCount,
             breakdown,
             outcomeBand,
             consequences
@@ -273,8 +306,44 @@ class PrioritisationEngine {
         }
     }
 
-    generateConsequences(breakdown, outcomeBand) {
+    generateConsequences(breakdown, outcomeBand, greenCount, redCount, synergyBonus, criticalPenalty) {
         const consequences = [];
+
+        // System synergy messages
+        if (synergyBonus >= 30) {
+            consequences.push({
+                type: 'success',
+                message: `✨ SYSTEM SYNERGY: All systems working in harmony! (+${synergyBonus})`
+            });
+        } else if (synergyBonus >= 15) {
+            consequences.push({
+                type: 'success',
+                message: `⚡ Multiple systems online and coordinated (+${synergyBonus})`
+            });
+        } else if (synergyBonus > 0) {
+            consequences.push({
+                type: 'info',
+                message: `🔗 Some system coordination achieved (+${synergyBonus})`
+            });
+        }
+
+        // Critical system penalties
+        if (criticalPenalty <= -50) {
+            consequences.push({
+                type: 'critical',
+                message: `🚨 CASCADING FAILURES: Multiple critical systems! (${criticalPenalty})`
+            });
+        } else if (criticalPenalty <= -25) {
+            consequences.push({
+                type: 'critical',
+                message: `⛔ Multiple systems critical - severe risk (${criticalPenalty})`
+            });
+        } else if (criticalPenalty < 0) {
+            consequences.push({
+                type: 'warning',
+                message: `⚠️ Multiple systems failing (${criticalPenalty})`
+            });
+        }
 
         // Survival consequences
         if (breakdown.survival < 30) {
@@ -446,11 +515,21 @@ class PrioritisationEngine {
             div.style.animationDelay = `${index * 0.15}s`;
 
             if (isActive) {
+                // Build score breakdown text
+                let scoreBreakdown = `BASE: ${results.baseScore}`;
+                if (results.synergyBonus > 0) {
+                    scoreBreakdown += ` + ${results.synergyBonus} (${results.greenCount} systems online)`;
+                }
+                if (results.criticalPenalty < 0) {
+                    scoreBreakdown += ` ${results.criticalPenalty} (${results.redCount} critical)`;
+                }
+                
                 div.innerHTML = `
                     <div class="band-marker">▶ YOU ARE HERE</div>
                     <div class="band-icon">${band.icon}</div>
                     <div class="band-active-label">${band.label}</div>
                     <div class="band-score">SCORE: ${results.totalScore}</div>
+                    <div class="band-score-breakdown">${scoreBreakdown}</div>
                     <div class="band-description">${results.outcomeBand.description}</div>
                 `;
             } else {
@@ -617,10 +696,13 @@ class PrioritisationEngine {
         });
         
         modal.classList.remove('hidden');
+        modal.classList.add('active');
     }
 
     closeDetails() {
-        document.getElementById('detailsModal').classList.add('hidden');
+        const modal = document.getElementById('detailsModal');
+        modal.classList.remove('active');
+        modal.classList.add('hidden');
     }
 
     switchScreen(screenId) {
@@ -779,6 +861,23 @@ End of Report
         // Close modal
         document.getElementById('closeModal').addEventListener('click', () => {
             this.closeDetails();
+        });
+
+        // Close modal when clicking outside content
+        document.getElementById('detailsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'detailsModal') {
+                this.closeDetails();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('detailsModal');
+                if (modal.classList.contains('active')) {
+                    this.closeDetails();
+                }
+            }
         });
 
         // Back to selection

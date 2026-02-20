@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCV Dauntless - Scoring Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+            color: #ffffff;
+            padding: 40px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #ff9966;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #99ccff;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+        .controls {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(153,153,255,0.3);
+        }
+        .control-section {
+            margin-bottom: 25px;
+        }
+        .control-section h3 {
+            color: #ffaa00;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        .weights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .weight-input {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .weight-input label {
+            color: #ccccff;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .weight-input input {
+            padding: 8px 12px;
+            border: 2px solid rgba(153,153,255,0.4);
+            background: rgba(0,0,0,0.3);
+            color: #ffffff;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        .weight-input input:focus {
+            outline: none;
+            border-color: #9999ff;
+        }
+        .simulation-controls {
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+        }
+        .simulation-controls > div {
+            flex: 1;
+        }
+        button {
+            background: linear-gradient(135deg, #ff9966, #ff6633);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: linear-gradient(135deg, #ffaa77, #ff7744);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255,102,51,0.4);
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .results {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 30px;
+            border: 2px solid rgba(153,153,255,0.3);
+        }
+        .results h2 {
+            color: #ffaa00;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        .outcome-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .outcome-card {
+            background: linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.2));
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid;
+        }
+        .outcome-card.success {
+            border-color: #4488ff;
+        }
+        .outcome-card.approved {
+            border-color: #33cc66;
+        }
+        .outcome-card.marginal {
+            border-color: #ffaa00;
+        }
+        .outcome-card.catastrophic {
+            border-color: #cc3333;
+        }
+        .outcome-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .outcome-card .count {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .outcome-card .percentage {
+            font-size: 1.2rem;
+            color: #ccccff;
+        }
+        .stats-details {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .stats-details h3 {
+            color: #99ccff;
+            margin-bottom: 15px;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+        .stat-label {
+            color: #ccccff;
+        }
+        .stat-value {
+            color: #ffffff;
+            font-weight: bold;
+        }
+        .progress {
+            margin-top: 20px;
+            text-align: center;
+            color: #ffaa00;
+            font-size: 1.1rem;
+        }
+        #loading {
+            display: none;
+        }
+        .sample-category {
+            margin-bottom: 20px;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .sample-category h4 {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .sample-category.success h4 { color: #4488ff; }
+        .sample-category.approved h4 { color: #33cc66; }
+        .sample-category.marginal h4 { color: #ffaa00; }
+        .sample-category.catastrophic h4 { color: #cc3333; }
+        .sample-item {
+            padding: 8px 0;
+            font-size: 0.9rem;
+            color: #ccccff;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .sample-item:last-child {
+            border-bottom: none;
+        }
+        .sample-score {
+            color: #ffaa00;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .sample-stories {
+            color: #99ccff;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 SCV Dauntless</h1>
+        <div class="subtitle">Scoring Simulation Engine</div>
+
+        <div class="controls">
+            <div class="control-section">
+                <h3>Tag Weights</h3>
+                <div class="weights-grid">
+                    <div class="weight-input">
+                        <label for="survivalWeight">Survival</label>
+                        <input type="number" id="survivalWeight" value="20" min="0" max="100">
+                    </div>
+                    <div class="weight-input">
+                        <label for="operationsWeight">Operations</label>
+                        <input type="number" id="operationsWeight" value="10" min="0" max="100">
+                    </div>
+                    <div class="weight-input">
+                        <label for="uncertaintyWeight">Uncertainty</label>
+                        <input type="number" id="uncertaintyWeight" value="15" min="0" max="100">
+                    </div>
+                    <div class="weight-input">
+                        <label for="strategicWeight">Strategic</label>
+                        <input type="number" id="strategicWeight" value="8" min="0" max="100">
+                    </div>
+                    <div class="weight-input">
+                        <label for="crewWeight">Crew</label>
+                        <input type="number" id="crewWeight" value="10" min="0" max="100">
+                    </div>
+                    <div class="weight-input">
+                        <label for="stakeholderWeight">Stakeholder</label>
+                        <input type="number" id="stakeholderWeight" value="5" min="0" max="100">
+                    </div>
+                    <div class="weight-input">
+                        <label for="latentWeight">Latent</label>
+                        <input type="number" id="latentWeight" value="12" min="0" max="100">
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Simulation Parameters</h3>
+                <div class="simulation-controls">
+                    <div class="weight-input">
+                        <label for="numTests">Number of Tests</label>
+                        <input type="number" id="numTests" value="1000" min="10" max="100000" step="100">
+                    </div>
+                    <div class="weight-input">
+                        <label for="maxRU">Max RU Budget</label>
+                        <input type="number" id="maxRU" value="100" min="50" max="200">
+                    </div>
+                    <div class="weight-input">
+                        <label for="maxSlots">Max Slots</label>
+                        <input type="number" id="maxSlots" value="10" min="5" max="20">
+                    </div>
+                    <button id="runSimulation">Run Simulation</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="progress">
+            Running simulation... <span id="progressText">0%</span>
+        </div>
+
+        <div class="results" id="results" style="display: none;">
+            <h2>Simulation Results</h2>
+            <div class="outcome-grid">
+                <div class="outcome-card success">
+                    <h3>🚀 Mission Success</h3>
+                    <div class="count" id="successCount">0</div>
+                    <div class="percentage" id="successPercent">0%</div>
+                </div>
+                <div class="outcome-card approved">
+                    <h3>✓ Launch Approved</h3>
+                    <div class="count" id="approvedCount">0</div>
+                    <div class="percentage" id="approvedPercent">0%</div>
+                </div>
+                <div class="outcome-card marginal">
+                    <h3>⚠ Marginal Clearance</h3>
+                    <div class="count" id="marginalCount">0</div>
+                    <div class="percentage" id="marginalPercent">0%</div>
+                </div>
+                <div class="outcome-card catastrophic">
+                    <h3>💥 Catastrophic Failure</h3>
+                    <div class="count" id="catastrophicCount">0</div>
+                    <div class="percentage" id="catastrophicPercent">0%</div>
+                </div>
+            </div>
+
+            <div class="stats-details">
+                <h3>Detailed Statistics</h3>
+                <div class="stat-row">
+                    <span class="stat-label">Average Score:</span>
+                    <span class="stat-value" id="avgScore">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Median Score:</span>
+                    <span class="stat-value" id="medianScore">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Min Score:</span>
+                    <span class="stat-value" id="minScore">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Max Score:</span>
+                    <span class="stat-value" id="maxScore">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Avg Stories Selected:</span>
+                    <span class="stat-value" id="avgStories">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Avg RU Used:</span>
+                    <span class="stat-value" id="avgRU">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Avg Green Systems:</span>
+                    <span class="stat-value" id="avgGreen">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Avg Red Systems:</span>
+                    <span class="stat-value" id="avgRed">0</span>
+                </div>
+            </div>
+
+            <div class="stats-details" style="margin-top: 20px;">
+                <h3>Sample Story Selections (First 5 of Each Outcome)</h3>
+                <div id="sampleSelections"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="storyData.js"></script>
+    <script>
+        class Simulator {
+            constructor() {
+                this.weights = {};
+                this.maxRU = 100;
+                this.maxSlots = 10;
+            }
+
+            getSystemRAG(breakdown) {
+                const systems = [
+                    { key: 'survival', thresholds: [40, 20] },
+                    { key: 'operations', thresholds: [30, 15] },
+                    { key: 'uncertainty', thresholds: [30, 15] },
+                    { key: 'strategic', thresholds: [16, 8] },
+                    { key: 'crew', thresholds: [20, 10] },
+                    { key: 'stakeholder', thresholds: [10, 5] },
+                    { key: 'latent', thresholds: [24, 12] }
+                ];
+
+                return systems.map(sys => {
+                    const score = breakdown[sys.key] || 0;
+                    let rag;
+                    if (score >= sys.thresholds[0]) {
+                        rag = 'green';
+                    } else if (score >= sys.thresholds[1]) {
+                        rag = 'amber';
+                    } else {
+                        rag = 'red';
+                    }
+                    return { key: sys.key, rag };
+                });
+            }
+
+            calculateScore(selectedStories) {
+                const breakdown = {
+                    survival: 0,
+                    operations: 0,
+                    uncertainty: 0,
+                    strategic: 0,
+                    crew: 0,
+                    stakeholder: 0,
+                    latent: 0
+                };
+
+                selectedStories.forEach(story => {
+                    story.tags.forEach(tag => {
+                        if (breakdown.hasOwnProperty(tag)) {
+                            breakdown[tag] += this.weights[tag] || 0;
+                        }
+                    });
+                });
+
+                const baseScore = Object.values(breakdown).reduce((sum, val) => sum + val, 0);
+
+                const systems = this.getSystemRAG(breakdown);
+                const greenCount = systems.filter(s => s.rag === 'green').length;
+                const redCount = systems.filter(s => s.rag === 'red').length;
+
+                let synergyBonus = 0;
+                let criticalPenalty = 0;
+
+                if (greenCount >= 6) {
+                    synergyBonus = 30;
+                } else if (greenCount >= 4) {
+                    synergyBonus = 15;
+                } else if (greenCount >= 2) {
+                    synergyBonus = 5;
+                }
+
+                if (redCount >= 6) {
+                    criticalPenalty = -50;
+                } else if (redCount >= 4) {
+                    criticalPenalty = -25;
+                } else if (redCount >= 2) {
+                    criticalPenalty = -10;
+                }
+
+                const totalScore = baseScore + synergyBonus + criticalPenalty;
+
+                let outcome;
+                if (totalScore >= 110) {
+                    outcome = 'success';
+                } else if (totalScore >= 85) {
+                    outcome = 'approved';
+                } else if (totalScore >= 60) {
+                    outcome = 'marginal';
+                } else {
+                    outcome = 'catastrophic';
+                }
+
+                return {
+                    totalScore,
+                    baseScore,
+                    synergyBonus,
+                    criticalPenalty,
+                    greenCount,
+                    redCount,
+                    outcome
+                };
+            }
+
+            generateRandomSelection() {
+                const available = [...storyData];
+                const selected = [];
+                let totalRU = 0;
+                let totalSlots = 0;
+
+                // Shuffle and try to add stories
+                available.sort(() => Math.random() - 0.5);
+
+                for (const story of available) {
+                    if (totalRU + story.ru <= this.maxRU && totalSlots + story.slots <= this.maxSlots) {
+                        if (Math.random() > 0.3) { // 70% chance to add if it fits
+                            selected.push(story);
+                            totalRU += story.ru;
+                            totalSlots += story.slots;
+                        }
+                    }
+                }
+
+                return { selected, totalRU, totalSlots };
+            }
+
+            async runSimulation(numTests, progressCallback) {
+                const results = {
+                    success: 0,
+                    approved: 0,
+                    marginal: 0,
+                    catastrophic: 0,
+                    scores: [],
+                    storyCounts: [],
+                    ruUsed: [],
+                    greenCounts: [],
+                    redCounts: [],
+                    samples: {
+                        success: [],
+                        approved: [],
+                        marginal: [],
+                        catastrophic: []
+                    }
+                };
+
+                const batchSize = 100;
+                for (let i = 0; i < numTests; i++) {
+                    const { selected, totalRU } = this.generateRandomSelection();
+                    const result = this.calculateScore(selected);
+
+                    results[result.outcome]++;
+                    results.scores.push(result.totalScore);
+                    results.storyCounts.push(selected.length);
+                    results.ruUsed.push(totalRU);
+                    results.greenCounts.push(result.greenCount);
+                    results.redCounts.push(result.redCount);
+
+                    // Store first 5 samples of each outcome
+                    if (results.samples[result.outcome].length < 5) {
+                        results.samples[result.outcome].push({
+                            stories: selected.map(s => s.id).sort(),
+                            totalScore: result.totalScore,
+                            baseScore: result.baseScore,
+                            synergyBonus: result.synergyBonus,
+                            criticalPenalty: result.criticalPenalty,
+                            greenCount: result.greenCount,
+                            redCount: result.redCount
+                        });
+                    }
+
+                    if (i % batchSize === 0) {
+                        progressCallback(Math.round((i / numTests) * 100));
+                        await new Promise(resolve => setTimeout(resolve, 0));
+                    }
+                }
+
+                progressCallback(100);
+                return results;
+            }
+        }
+
+        document.getElementById('runSimulation').addEventListener('click', async () => {
+            const button = document.getElementById('runSimulation');
+            const loading = document.getElementById('loading');
+            const resultsDiv = document.getElementById('results');
+
+            button.disabled = true;
+            loading.style.display = 'block';
+            resultsDiv.style.display = 'none';
+
+            const simulator = new Simulator();
+            simulator.weights = {
+                survival: parseInt(document.getElementById('survivalWeight').value),
+                operations: parseInt(document.getElementById('operationsWeight').value),
+                uncertainty: parseInt(document.getElementById('uncertaintyWeight').value),
+                strategic: parseInt(document.getElementById('strategicWeight').value),
+                crew: parseInt(document.getElementById('crewWeight').value),
+                stakeholder: parseInt(document.getElementById('stakeholderWeight').value),
+                latent: parseInt(document.getElementById('latentWeight').value)
+            };
+            simulator.maxRU = parseInt(document.getElementById('maxRU').value);
+            simulator.maxSlots = parseInt(document.getElementById('maxSlots').value);
+
+            const numTests = parseInt(document.getElementById('numTests').value);
+
+            const results = await simulator.runSimulation(numTests, (progress) => {
+                document.getElementById('progressText').textContent = progress + '%';
+            });
+
+            // Display results
+            document.getElementById('successCount').textContent = results.success;
+            document.getElementById('successPercent').textContent = ((results.success / numTests) * 100).toFixed(1) + '%';
+            
+            document.getElementById('approvedCount').textContent = results.approved;
+            document.getElementById('approvedPercent').textContent = ((results.approved / numTests) * 100).toFixed(1) + '%';
+            
+            document.getElementById('marginalCount').textContent = results.marginal;
+            document.getElementById('marginalPercent').textContent = ((results.marginal / numTests) * 100).toFixed(1) + '%';
+            
+            document.getElementById('catastrophicCount').textContent = results.catastrophic;
+            document.getElementById('catastrophicPercent').textContent = ((results.catastrophic / numTests) * 100).toFixed(1) + '%';
+
+            // Calculate statistics
+            const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+            const median = arr => {
+                const sorted = [...arr].sort((a, b) => a - b);
+                const mid = Math.floor(sorted.length / 2);
+                return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+            };
+
+            document.getElementById('avgScore').textContent = avg(results.scores).toFixed(1);
+            document.getElementById('medianScore').textContent = median(results.scores).toFixed(1);
+            document.getElementById('minScore').textContent = Math.min(...results.scores);
+            document.getElementById('maxScore').textContent = Math.max(...results.scores);
+            document.getElementById('avgStories').textContent = avg(results.storyCounts).toFixed(1);
+            document.getElementById('avgRU').textContent = avg(results.ruUsed).toFixed(1);
+            document.getElementById('avgGreen').textContent = avg(results.greenCounts).toFixed(1);
+            document.getElementById('avgRed').textContent = avg(results.redCounts).toFixed(1);
+
+            // Display sample selections
+            const samplesDiv = document.getElementById('sampleSelections');
+            samplesDiv.innerHTML = '';
+
+            const outcomeLabels = {
+                success: '🚀 Mission Success (110+)',
+                approved: '✓ Launch Approved (85-109)',
+                marginal: '⚠ Marginal Clearance (60-84)',
+                catastrophic: '💥 Catastrophic Failure (<60)'
+            };
+
+            for (const [outcome, label] of Object.entries(outcomeLabels)) {
+                const samples = results.samples[outcome];
+                if (samples.length === 0) continue;
+
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = `sample-category ${outcome}`;
+                
+                let html = `<h4>${label}</h4>`;
+                samples.forEach((sample, index) => {
+                    let scoreDetails = `Score: ${sample.totalScore} (Base: ${sample.baseScore}`;
+                    if (sample.synergyBonus > 0) {
+                        scoreDetails += `, +${sample.synergyBonus} synergy`;
+                    }
+                    if (sample.criticalPenalty < 0) {
+                        scoreDetails += `, ${sample.criticalPenalty} critical`;
+                    }
+                    scoreDetails += `)`;
+                    
+                    html += `
+                        <div class="sample-item">
+                            <span class="sample-score">#${index + 1}: ${scoreDetails}</span>
+                            <br>
+                            <span class="sample-stories">Stories: ${sample.stories.join(', ')}</span>
+                            <br>
+                            <span class="sample-stories">Systems: ${sample.greenCount} green, ${7 - sample.greenCount - sample.redCount} amber, ${sample.redCount} red</span>
+                        </div>
+                    `;
+                });
+                
+                categoryDiv.innerHTML = html;
+                samplesDiv.appendChild(categoryDiv);
+            }
+
+            loading.style.display = 'none';
+            resultsDiv.style.display = 'block';
+            button.disabled = false;
+        });
+    </script>
+</body>
+</html>
